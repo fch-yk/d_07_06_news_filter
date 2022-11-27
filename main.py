@@ -1,9 +1,9 @@
 import asyncio
 import os
 
-
-import aiohttp
 import aiofiles
+import aiohttp
+import anyio
 import pymorphy2
 
 import text_tools
@@ -16,6 +16,21 @@ async def fetch(session, url):
         return await response.text()
 
 
+async def process_article(url, charged_words):
+    async with aiohttp.ClientSession() as session:
+        article_text = await fetch(session, url)
+        article_text = SANITIZERS['inosmi_ru'](article_text, True)
+        morph = pymorphy2.MorphAnalyzer()
+        words = text_tools.split_by_words(morph, article_text)
+        jaundice_rate = text_tools.calculate_jaundice_rate(
+            words,
+            charged_words
+        )
+        print(f'URL: {url}')
+        print(f'Raiting: {jaundice_rate}')
+        print(f'Words in the article: {len(words)}\n')
+
+
 async def main():
     charged_words = []
     charged_dict_path = 'charged_dict'
@@ -25,18 +40,17 @@ async def main():
             async for word in file:
                 charged_words.append(word.strip())
 
-    async with aiohttp.ClientSession() as session:
-        url = 'https://inosmi.ru/20221106/kosmos-257523048.html'
-        article_text = await fetch(session, url)
-        article_text = SANITIZERS['inosmi_ru'](article_text, True)
-        morph = pymorphy2.MorphAnalyzer()
-        words = text_tools.split_by_words(morph, article_text)
-        jaundice_rate = text_tools.calculate_jaundice_rate(
-            words,
-            charged_words
-        )
-        print(f'Raiting: {jaundice_rate}')
-        print(f'Words in the article: {len(words)}')
+    test_articles = [
+        'https://inosmi.ru/20221106/kosmos-257523048.html',
+        'https://inosmi.ru/20221106/virusy-257514193.html',
+        'https://inosmi.ru/20221106/videoigry-257474918.html',
+        'https://inosmi.ru/20221106/kosmos-257489166.html',
+        'https://inosmi.ru/20221104/mars-257472040.html'
+    ]
+
+    async with anyio.create_task_group() as task_group:
+        for url in test_articles:
+            task_group.start_soon(process_article, url, charged_words)
 
 if __name__ == '__main__':
     asyncio.run(main())
