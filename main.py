@@ -21,27 +21,27 @@ class ProcessingStatus(Enum):
 
 
 async def fetch(session, url):
-    async with session.get(url) as response:
-        response.raise_for_status()
-        return await response.text()
+    async with async_timeout.timeout(0.1):
+        async with session.get(url) as response:
+            response.raise_for_status()
+            return await response.text()
 
 
 async def process_article(url, charged_words, articles_cards):
     status = ProcessingStatus.OK
     rating = words_number = None
     try:
-        async with async_timeout.timeout(5):
-            async with aiohttp.ClientSession() as session:
-                article_text = await fetch(session, url)
-                article_text = SANITIZERS['inosmi_ru'](article_text, True)
-                morph = pymorphy2.MorphAnalyzer()
-                words = text_tools.split_by_words(morph, article_text)
-                rating = text_tools.calculate_jaundice_rate(
-                    words,
-                    charged_words
-                )
-                status = ProcessingStatus.OK
-                words_number = len(words)
+        async with aiohttp.ClientSession() as session:
+            article_text = await fetch(session, url)
+            article_text = SANITIZERS['inosmi_ru'](article_text, True)
+            morph = pymorphy2.MorphAnalyzer()
+            words = text_tools.split_by_words(morph, article_text)
+            rating = text_tools.calculate_jaundice_rate(
+                words,
+                charged_words
+            )
+            status = ProcessingStatus.OK
+            words_number = len(words)
     except (
         aiohttp.ClientError,
         adapters.ArticleNotFound,
