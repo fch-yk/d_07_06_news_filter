@@ -1,5 +1,9 @@
-import aiohttp
 import asyncio
+
+import aiohttp
+import pymorphy2
+
+import text_tools
 from adapters import SANITIZERS
 
 
@@ -14,7 +18,15 @@ async def main():
         url = 'https://inosmi.ru/20221106/kosmos-257523048.html'
         article_text = await fetch(session, url)
         article_text = SANITIZERS['inosmi_ru'](article_text, True)
-        print(article_text)
+        morph = pymorphy2.MorphAnalyzer()
+        words = text_tools.split_by_words(morph, article_text)
+        charged_words = ['собака', 'голод', 'мучительный', 'миссия']
+        jaundice_rate = text_tools.calculate_jaundice_rate(
+            words,
+            charged_words
+        )
+        print(f'Raiting: {jaundice_rate}')
+        print(f'Words in the article: {len(words)}')
 
 if __name__ == '__main__':
     asyncio.run(main())
