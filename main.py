@@ -16,7 +16,7 @@ async def fetch(session, url):
         return await response.text()
 
 
-async def process_article(url, charged_words):
+async def process_article(url, charged_words, articles_cards):
     async with aiohttp.ClientSession() as session:
         article_text = await fetch(session, url)
         article_text = SANITIZERS['inosmi_ru'](article_text, True)
@@ -26,9 +26,9 @@ async def process_article(url, charged_words):
             words,
             charged_words
         )
-        print(f'URL: {url}')
-        print(f'Raiting: {jaundice_rate}')
-        print(f'Words in the article: {len(words)}\n')
+        articles_cards.append(
+            {'url': url, 'rating': jaundice_rate, 'words_number': len(words)}
+        )
 
 
 async def main():
@@ -48,9 +48,25 @@ async def main():
         'https://inosmi.ru/20221104/mars-257472040.html'
     ]
 
+    articles_cards = []
     async with anyio.create_task_group() as task_group:
         for url in test_articles:
-            task_group.start_soon(process_article, url, charged_words)
+            task_group.start_soon(
+                process_article,
+                url,
+                charged_words,
+                articles_cards,
+            )
+
+    for article_card in articles_cards:
+        print(
+            f'URL: {article_card["url"]}',
+            f'Rating: {article_card["rating"]}',
+            f'Words in the article: {article_card["words_number"]}',
+            sep='\n',
+            end='\n'*2
+        )
+
 
 if __name__ == '__main__':
     asyncio.run(main())
