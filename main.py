@@ -5,6 +5,7 @@ from enum import Enum
 import aiofiles
 import aiohttp
 import anyio
+import async_timeout
 import pymorphy2
 
 import adapters
@@ -16,6 +17,7 @@ class ProcessingStatus(Enum):
     OK = 'OK'
     FETCH_ERROR = 'FETCH_ERROR'
     PARSING_ERROR = 'PARSING_ERROR'
+    TIMEOUT = 'TIMEOUT'
 
 
 async def fetch(session, url):
@@ -28,22 +30,29 @@ async def process_article(url, charged_words, articles_cards):
     status = ProcessingStatus.OK
     rating = words_number = None
     try:
-        async with aiohttp.ClientSession() as session:
-            article_text = await fetch(session, url)
-            article_text = SANITIZERS['inosmi_ru'](article_text, True)
-            morph = pymorphy2.MorphAnalyzer()
-            words = text_tools.split_by_words(morph, article_text)
-            rating = text_tools.calculate_jaundice_rate(
-                words,
-                charged_words
-            )
-            status = ProcessingStatus.OK
-            words_number = len(words)
-    except (aiohttp.ClientError, adapters.ArticleNotFound) as error:
+        async with async_timeout.timeout(5):
+            async with aiohttp.ClientSession() as session:
+                article_text = await fetch(session, url)
+                article_text = SANITIZERS['inosmi_ru'](article_text, True)
+                morph = pymorphy2.MorphAnalyzer()
+                words = text_tools.split_by_words(morph, article_text)
+                rating = text_tools.calculate_jaundice_rate(
+                    words,
+                    charged_words
+                )
+                status = ProcessingStatus.OK
+                words_number = len(words)
+    except (
+        aiohttp.ClientError,
+        adapters.ArticleNotFound,
+        asyncio.TimeoutError
+    ) as error:
         if isinstance(error, aiohttp.ClientError):
             status = ProcessingStatus.FETCH_ERROR
-        else:
+        elif isinstance(error, adapters.ArticleNotFound):
             status = ProcessingStatus.PARSING_ERROR
+        else:
+            status = ProcessingStatus.TIMEOUT
 
     articles_cards.append(
         {
