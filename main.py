@@ -7,6 +7,7 @@ import aiohttp
 import anyio
 import pymorphy2
 
+import adapters
 import text_tools
 from adapters import SANITIZERS
 
@@ -14,6 +15,7 @@ from adapters import SANITIZERS
 class ProcessingStatus(Enum):
     OK = 'OK'
     FETCH_ERROR = 'FETCH_ERROR'
+    PARSING_ERROR = 'PARSING_ERROR'
 
 
 async def fetch(session, url):
@@ -37,8 +39,11 @@ async def process_article(url, charged_words, articles_cards):
             )
             status = ProcessingStatus.OK
             words_number = len(words)
-    except (aiohttp.ClientError,):
-        status = ProcessingStatus.FETCH_ERROR
+    except (aiohttp.ClientError, adapters.ArticleNotFound) as error:
+        if isinstance(error, aiohttp.ClientError):
+            status = ProcessingStatus.FETCH_ERROR
+        else:
+            status = ProcessingStatus.PARSING_ERROR
 
     articles_cards.append(
         {
@@ -62,7 +67,7 @@ async def main():
         'https://inosmi.ru/not/exist.html',
         'https://inosmiy.ru/20221106/virusy-257514193.html',
         'https://inosmi.ru/20221106/videoigry-257474918.html',
-        'https://inosmi.ru/20221106/kosmos-257489166.html',
+        'https://lenta.ru/news/2022/11/27/20_strausov/',
         'https://inosmi.ru/20221104/mars-257472040.html'
     ]
 
