@@ -1,5 +1,8 @@
 import asyncio
+import logging
 import os
+import time
+from contextlib import contextmanager
 from enum import Enum
 
 import aiofiles
@@ -11,6 +14,7 @@ import pymorphy2
 import adapters
 import text_tools
 from adapters import SANITIZERS
+# import tmp_01  # debug
 
 
 class ProcessingStatus(Enum):
@@ -20,8 +24,24 @@ class ProcessingStatus(Enum):
     TIMEOUT = 'TIMEOUT'
 
 
+@contextmanager
+def check_time(url):
+    start = time.monotonic()
+    try:
+        yield
+    finally:
+        logger = logging.getLogger("check_time")
+        end = time.monotonic()
+        total = round(end - start, 2)
+        logger.info(
+            'The analysis of the text from %s was completed in %s seconds',
+            url,
+            total
+        )
+
+
 async def fetch(session, url):
-    async with async_timeout.timeout(0.1):
+    async with async_timeout.timeout(5):
         async with session.get(url) as response:
             response.raise_for_status()
             return await response.text()
@@ -34,8 +54,10 @@ async def process_article(url, charged_words, articles_cards):
         async with aiohttp.ClientSession() as session:
             article_text = await fetch(session, url)
             article_text = SANITIZERS['inosmi_ru'](article_text, True)
+            # article_text = tmp_01.TEST_TEXT
             morph = pymorphy2.MorphAnalyzer()
-            words = text_tools.split_by_words(morph, article_text)
+            with check_time(url):
+                words = text_tools.split_by_words(morph, article_text)
             rating = text_tools.calculate_jaundice_rate(
                 words,
                 charged_words
@@ -64,6 +86,9 @@ async def process_article(url, charged_words, articles_cards):
 
 
 async def main():
+    logging.basicConfig()
+    logger = logging.getLogger("check_time")
+    logger.setLevel(logging.DEBUG)
     charged_words = []
     charged_dict_path = 'charged_dict'
     for file_name in os.listdir(charged_dict_path):
@@ -77,7 +102,8 @@ async def main():
         'https://inosmiy.ru/20221106/virusy-257514193.html',
         'https://inosmi.ru/20221106/videoigry-257474918.html',
         'https://lenta.ru/news/2022/11/27/20_strausov/',
-        'https://inosmi.ru/20221104/mars-257472040.html'
+        'https://inosmi.ru/20221104/mars-257472040.html',
+        'https://inosmi.ru/20221127/bessmertie-258272850.html',
     ]
 
     articles_cards = []
@@ -92,12 +118,11 @@ async def main():
 
     for article_card in articles_cards:
         print(
-            f'URL: {article_card["url"]}',
+            f'\nURL: {article_card["url"]}',
             f'Status: {article_card["status"]}',
             f'Rating: {article_card["rating"]}',
             f'Words in the article: {article_card["words_number"]}',
             sep='\n',
-            end='\n'*2
         )
 
 
