@@ -14,7 +14,6 @@ import pymorphy2
 import adapters
 import text_tools
 from adapters import SANITIZERS
-# import tmp_01  # debug
 
 
 class ProcessingStatus(Enum):
@@ -53,11 +52,12 @@ async def process_article(url, charged_words, articles_cards):
     try:
         async with aiohttp.ClientSession() as session:
             article_text = await fetch(session, url)
+
             article_text = SANITIZERS['inosmi_ru'](article_text, True)
-            # article_text = tmp_01.TEST_TEXT
             morph = pymorphy2.MorphAnalyzer()
+
             with check_time(url):
-                words = text_tools.split_by_words(morph, article_text)
+                words = await text_tools.split_by_words(morph, article_text)
             rating = text_tools.calculate_jaundice_rate(
                 words,
                 charged_words
