@@ -40,25 +40,35 @@ def check_time(url):
         )
 
 
-async def fetch(session, url):
-    async with async_timeout.timeout(5):
+async def fetch(session, url, fetch_timeout):
+    async with async_timeout.timeout(fetch_timeout):
         async with session.get(url) as response:
             response.raise_for_status()
             return await response.text()
 
 
-async def process_article(url, charged_words, articles_cards):
+async def process_article(
+    url,
+    charged_words,
+    articles_cards,
+    fetch_timeout=5,
+    analysis_timeout=3
+):
     status = ProcessingStatus.OK.value
     rating = words_number = None
     try:
         async with aiohttp.ClientSession() as session:
-            article_text = await fetch(session, url)
+            article_text = await fetch(session, url, fetch_timeout)
 
             article_text = SANITIZERS['inosmi_ru'](article_text, True)
             morph = pymorphy2.MorphAnalyzer()
 
             with check_time(url):
-                words = await text_tools.split_by_words(morph, article_text)
+                words = await text_tools.split_by_words(
+                    morph,
+                    article_text,
+                    analysis_timeout
+                )
             rating = text_tools.calculate_jaundice_rate(
                 words,
                 charged_words
@@ -83,6 +93,43 @@ async def process_article(url, charged_words, articles_cards):
             'rating': rating,
             'words_number': words_number}
     )
+
+
+def test_process_article():
+    charged_words = ['беспокойство', ' грязь', 'кризис']
+
+    url = 'https://inosmi.ru/not/exist.html'
+    articles_cards = []
+    asyncio.run(process_article(url, charged_words, articles_cards))
+    assert articles_cards[0]['status'] == ProcessingStatus.FETCH_ERROR.value
+
+    url = 'https://lenta.ru/news/2022/11/27/20_strausov/'
+    articles_cards = []
+    asyncio.run(process_article(url, charged_words, articles_cards))
+    assert articles_cards[0]['status'] == ProcessingStatus.PARSING_ERROR.value
+
+    url = 'https://inosmi.ru/20221104/mars-257472040.html'
+    articles_cards = []
+    fetch_timeout = 0.1
+    asyncio.run(
+        process_article(url, charged_words, articles_cards, fetch_timeout)
+    )
+    assert articles_cards[0]['status'] == ProcessingStatus.TIMEOUT.value
+
+    url = 'https://inosmi.ru/20221104/mars-257472040.html'
+    articles_cards = []
+    fetch_timeout = 5
+    analysis_timeout = 0.1
+    asyncio.run(
+        process_article(
+            url,
+            charged_words,
+            articles_cards,
+            fetch_timeout,
+            analysis_timeout
+        )
+    )
+    assert articles_cards[0]['status'] == ProcessingStatus.TIMEOUT.value
 
 
 async def handle(request, charged_words):
@@ -124,7 +171,7 @@ def main():
             for word in file:
                 charged_words.append(word.strip())
 
-    handler = functools.partial(handle, charged_words=charged_words)
+    handler = functools.partial(handle, charged_words=charged_words,)
     app = web.Application()
     app.add_routes([web.get('/', handler)])
     web.run_app(app)
