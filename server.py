@@ -88,9 +88,15 @@ async def process_article(url, charged_words, articles_cards):
 async def handle(request, charged_words):
     urls = request.query.getone('urls', None)
     if not urls:
-        return web.json_response(None)
+        return web.json_response({'error': 'no urls to analyze'}, status=400)
 
     urls = urls.split(sep=',')
+    max_urls = 10
+    if len(urls) > max_urls:
+        return web.json_response(
+            {'error': 'too many urls in request, should be 10 or less'},
+            status=400,
+        )
 
     articles_cards = []
     async with anyio.create_task_group() as task_group:
