@@ -161,7 +161,7 @@ async def handle(request, charged_words):
 def main():
     logging.basicConfig()
     logger = logging.getLogger("check_time")
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     charged_words = []
     charged_words_path = 'charged_dict'
