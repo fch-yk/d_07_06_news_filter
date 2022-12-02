@@ -46,7 +46,7 @@ python client.py
   - [an article about video games on inosmi.ru](https://inosmi.ru/20221106/videoigry-257474918.html);
   - [an article about ostriches on lenta.ru (unsupported resource)](https://lenta.ru/news/2022/11/27/20_strausov/);
   - [an article about the Mars on inosmi.ru](https://inosmi.ru/20221104/mars-257472040.html);
-  - [an article about lobster on  inosmi.ru](https://inosmi.ru/20221127/bessmertie-258272850.html)
+  - [an article about lobsters on  inosmi.ru](https://inosmi.ru/20221127/bessmertie-258272850.html)
 
 - You can specify URLs of articles (separate them with commas, up to 10 URLs can be processed), e.g.:
 
