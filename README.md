@@ -79,4 +79,4 @@ python -m pytest server.py -v
 ## Project goals
 
 The project was created for educational purposes.
-It's a lesson for python and web developers at [Devman](https://dvmn.org)
+It's a lesson for python and web developers at [Devman](https://dvmn.org).
