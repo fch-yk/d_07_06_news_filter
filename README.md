@@ -51,7 +51,7 @@ python client.py
 - You can specify URLs of articles (separate them with commas, up to 10 URLs can be processed), e.g.:
 
 ```bash
-python client.py --urls https://inosmi.ru/20221127/bessmertie-258272850.html,https://inosmi.ru/20221127/bessmertie-258272850.html
+python client.py --urls https://inosmi.ru/20221127/bessmertie-258272850.html,https://inosmi.ru/20221104/mars-257472040.html
 ```
 
 - To find out more, run:
