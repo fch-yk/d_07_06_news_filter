@@ -29,7 +29,7 @@ async def split_by_words(morph, text, analysis_timeout=3):
 
 def test_split_by_words():
     '''
-    Экземпляры MorphAnalyzer занимают 10-15Мб RAM
+    Экземпляры MorphAnalyzer занимают 10-15 Мб RAM
     т.к. загружают в память много данных
     Старайтесь организовать свой код так, чтобы создавать экземпляр
     MorphAnalyzer заранее и в единственном числе
@@ -48,7 +48,7 @@ def test_split_by_words():
 
 def calculate_jaundice_rate(article_words, charged_words):
     """
-    Расчитывает желтушность текста, принимает список "заряженных" слов
+    Рассчитывает желтушность текста, принимает список "заряженных" слов
     и ищет их внутри article_words.
     """
 

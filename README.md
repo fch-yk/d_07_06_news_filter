@@ -1,39 +1,82 @@
-# Фильтр желтушных новостей
+# Filter of jaundice news
 
-[TODO. Опишите проект, схему работы]
+The program can rate news articles from [inosmi.ru](https://inosmi.ru/).
 
-Пока поддерживается только один новостной сайт - [ИНОСМИ.РУ](https://inosmi.ru/). Для него разработан специальный адаптер, умеющий выделять текст статьи на фоне остальной HTML разметки. Для других новостных сайтов потребуются новые адаптеры, все они будут находиться в каталоге `adapters`. Туда же помещен код для сайта ИНОСМИ.РУ: `adapters/inosmi_ru.py`.
+## Prerequisites
 
-В перспективе можно создать универсальный адаптер, подходящий для всех сайтов, но его разработка будет сложной и потребует дополнительных времени и сил.
+Python 3.10 is required.
 
-# Как установить
+## Installing
 
-Вам понадобится Python версии 3.7 или старше. Для установки пакетов рекомендуется создать виртуальное окружение.
+- Download the project files.
+- It is recommended to use [venv](https://docs.python.org/3/library/venv.html?highlight=venv#module-venv) for project isolation.
+- Set up packages:
 
-Первым шагом установите пакеты:
-
-```python3
+```bash
 pip install -r requirements.txt
 ```
 
-# Как запустить
+## Using scripts
 
-```python3
-python main.py
+### Script "server"
+
+- Run server:
+
+```bash
+python server.py
 ```
 
-# Как запустить тесты
+- To check interactively that the server is running, you can follow [this test link](http://127.0.0.1:8080/?urls=https://inosmi.ru/20221104/mars-257472040.html):
 
-Для тестирования используется [pytest](https://docs.pytest.org/en/latest/), тестами покрыты фрагменты кода сложные в отладке: text_tools.py и адаптеры. Команды для запуска тестов:
+![check in browser](./images/check_in_browser.png)
 
+### Script "client"
+
+- The script requests the analysis of articles from the server (script "server" must be running as described above);
+
+- Run:
+
+```bash
+python client.py
 ```
-python -m pytest adapters/inosmi_ru.py
+
+- The command above will analyze default articles:
+  - [not existing article](https://inosmi.ru/not/exist.html);
+  - [not existing domain](https://inosmiy.ru/20221106/virusy-257514193.html);
+  - [an article about video games on inosmi.ru](https://inosmi.ru/20221106/videoigry-257474918.html);
+  - [an article about ostriches on lenta.ru (unsupported resource)](https://lenta.ru/news/2022/11/27/20_strausov/);
+  - [an article about the Mars on inosmi.ru](https://inosmi.ru/20221104/mars-257472040.html);
+  - [an article about lobster on  inosmi.ru](https://inosmi.ru/20221127/bessmertie-258272850.html)
+
+- You can specify URLs of articles (separate them with commas, up to 10 URLs can be processed), e.g.:
+
+```bash
+python client.py --urls https://inosmi.ru/20221127/bessmertie-258272850.html,https://inosmi.ru/20221127/bessmertie-258272850.html
 ```
 
-```
-python -m pytest text_tools.py
+- To find out more, run:
+
+```bash
+python client.py -h
 ```
 
-# Цели проекта
+## Tests
 
-Код написан в учебных целях. Это урок из курса по веб-разработке — [Девман](https://dvmn.org).
+The project uses [pytest](https://docs.pytest.org/en/latest/). Run tests with:
+
+```bash
+python -m pytest adapters/inosmi_ru.py -v
+```
+
+```bash
+python -m pytest text_tools.py -v
+```
+
+```bash
+python -m pytest server.py -v
+```
+
+## Project goals
+
+The project was created for educational purposes.
+It's a lesson for python and web developers at [Devman](https://dvmn.org)
