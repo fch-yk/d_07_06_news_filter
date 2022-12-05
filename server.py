@@ -52,9 +52,11 @@ async def process_article(
     url,
     charged_words,
     articles_cards,
-    fetch_timeout=5,
-    analysis_timeout=3
+    morph,
+    **kwargs
 ):
+    fetch_timeout = kwargs.get('fetch_timeout', 5)
+    analysis_timeout = kwargs.get('analysis_timeout', 3)
     status = ProcessingStatus.OK.value
     rating = words_number = None
     try:
@@ -62,7 +64,6 @@ async def process_article(
             article_text = await fetch(session, url, fetch_timeout)
 
             article_text = SANITIZERS['inosmi_ru'](article_text, True)
-            morph = pymorphy2.MorphAnalyzer()
 
             with check_time(url):
                 words = await text_tools.split_by_words(
@@ -98,36 +99,40 @@ async def process_article(
 
 def test_process_article():
     charged_words = ['беспокойство', ' грязь', 'кризис']
+    morph = pymorphy2.MorphAnalyzer()
 
     url = 'https://inosmi.ru/not/exist.html'
     articles_cards = []
-    asyncio.run(process_article(url, charged_words, articles_cards))
+    asyncio.run(process_article(url, charged_words, articles_cards, morph))
     assert articles_cards[0]['status'] == ProcessingStatus.FETCH_ERROR.value
 
     url = 'https://lenta.ru/news/2022/11/27/20_strausov/'
     articles_cards = []
-    asyncio.run(process_article(url, charged_words, articles_cards))
+    asyncio.run(process_article(url, charged_words, articles_cards, morph))
     assert articles_cards[0]['status'] == ProcessingStatus.PARSING_ERROR.value
 
     url = 'https://inosmi.ru/20221104/mars-257472040.html'
     articles_cards = []
-    fetch_timeout = 0.1
-    asyncio.run(
-        process_article(url, charged_words, articles_cards, fetch_timeout)
-    )
-    assert articles_cards[0]['status'] == ProcessingStatus.TIMEOUT.value
-
-    url = 'https://inosmi.ru/20221104/mars-257472040.html'
-    articles_cards = []
-    fetch_timeout = 5
-    analysis_timeout = 0.1
     asyncio.run(
         process_article(
             url,
             charged_words,
             articles_cards,
-            fetch_timeout,
-            analysis_timeout
+            morph,
+            fetch_timeout=0.1
+        )
+    )
+    assert articles_cards[0]['status'] == ProcessingStatus.TIMEOUT.value
+
+    url = 'https://inosmi.ru/20221104/mars-257472040.html'
+    articles_cards = []
+    asyncio.run(
+        process_article(
+            url,
+            charged_words,
+            articles_cards,
+            morph,
+            analysis_timeout=0.1
         )
     )
     assert articles_cards[0]['status'] == ProcessingStatus.TIMEOUT.value
@@ -146,6 +151,7 @@ async def handle(request, charged_words):
             status=400,
         )
 
+    morph = pymorphy2.MorphAnalyzer()
     articles_cards = []
     async with anyio.create_task_group() as task_group:
         for url in urls:
@@ -154,6 +160,7 @@ async def handle(request, charged_words):
                 url,
                 charged_words,
                 articles_cards,
+                morph,
             )
 
     return web.json_response(articles_cards)
