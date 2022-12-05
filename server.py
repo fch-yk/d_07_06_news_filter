@@ -16,6 +16,8 @@ import adapters
 import text_tools
 from adapters import SANITIZERS
 
+logger = logging.getLogger(__file__)
+
 
 class ProcessingStatus(Enum):
     OK = 'OK'
@@ -30,7 +32,6 @@ def check_time(url):
     try:
         yield
     finally:
-        logger = logging.getLogger("check_time")
         end = time.monotonic()
         total = round(end - start, 2)
         logger.info(
@@ -160,7 +161,6 @@ async def handle(request, charged_words):
 
 def main():
     logging.basicConfig()
-    logger = logging.getLogger("check_time")
     logger.setLevel(logging.INFO)
 
     charged_words = []
