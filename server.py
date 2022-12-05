@@ -76,17 +76,12 @@ async def process_article(
                 charged_words
             )
             words_number = len(words)
-    except (
-        aiohttp.ClientError,
-        adapters.ArticleNotFound,
-        asyncio.TimeoutError
-    ) as error:
-        if isinstance(error, aiohttp.ClientError):
-            status = ProcessingStatus.FETCH_ERROR.value
-        elif isinstance(error, adapters.ArticleNotFound):
-            status = ProcessingStatus.PARSING_ERROR.value
-        else:
-            status = ProcessingStatus.TIMEOUT.value
+    except aiohttp.ClientError:
+        status = ProcessingStatus.FETCH_ERROR.value
+    except adapters.ArticleNotFound:
+        status = ProcessingStatus.PARSING_ERROR.value
+    except asyncio.TimeoutError:
+        status = ProcessingStatus.TIMEOUT.value
 
     articles_cards.append(
         {
