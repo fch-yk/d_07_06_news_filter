@@ -26,6 +26,18 @@ pip install -r requirements.txt
 python server.py
 ```
 
+- By default, the maximum number of URLs to analyze is 10. You can specify the maximum number of URLs, e.g.:
+
+```bash
+python server.py --max_urls 5
+```
+
+- To find out more, run the help:
+
+```bash
+python server.py -h
+```
+
 - To check interactively that the server is running, you can follow [this test link](http://127.0.0.1:8080/?urls=https://inosmi.ru/20221104/mars-257472040.html):
 
 ![check in browser](./images/check_in_browser.png)
@@ -48,7 +60,7 @@ python client.py
   - [an article about the Mars on inosmi.ru](https://inosmi.ru/20221104/mars-257472040.html);
   - [an article about lobsters on  inosmi.ru](https://inosmi.ru/20221127/bessmertie-258272850.html)
 
-- You can specify URLs of articles (separate them with commas, up to 10 URLs can be processed), e.g.:
+- You can specify URLs of articles (separate them with commas), e.g.:
 
 ```bash
 python client.py --urls https://inosmi.ru/20221127/bessmertie-258272850.html,https://inosmi.ru/20221104/mars-257472040.html

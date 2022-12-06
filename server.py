@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import functools
 import logging
@@ -24,6 +25,21 @@ class ProcessingStatus(Enum):
     FETCH_ERROR = 'FETCH_ERROR'
     PARSING_ERROR = 'PARSING_ERROR'
     TIMEOUT = 'TIMEOUT'
+
+
+def create_args_parser():
+    parser = argparse.ArgumentParser(description='Jaundice news rate server')
+
+    parser.add_argument(
+        '--max_urls',
+        default=10,
+        metavar='{maximum number of urls}',
+        help=(
+            'The maximum number of urls to analyze, 10 by default'
+        ),
+        type=int
+    )
+    return parser
 
 
 @contextmanager
@@ -133,16 +149,15 @@ def test_process_article():
     assert articles_cards[0]['status'] == ProcessingStatus.TIMEOUT.value
 
 
-async def handle(request, charged_words):
+async def handle(request, charged_words, max_urls):
     urls = request.query.getone('urls', None)
     if not urls:
         return web.json_response({'error': 'no urls to analyze'}, status=400)
 
     urls = urls.split(sep=',')
-    max_urls = 10
     if len(urls) > max_urls:
         return web.json_response(
-            {'error': 'too many urls in request, should be 10 or less'},
+            {'error': f'too many urls in request, should be {max_urls} or less'},
             status=400,
         )
 
@@ -162,6 +177,8 @@ async def handle(request, charged_words):
 
 
 def main():
+    args_parser = create_args_parser()
+    args = args_parser.parse_args()
     logging.basicConfig()
     logger.setLevel(logging.INFO)
 
@@ -173,7 +190,11 @@ def main():
             for word in file:
                 charged_words.append(word.strip())
 
-    handler = functools.partial(handle, charged_words=charged_words,)
+    handler = functools.partial(
+        handle,
+        charged_words=charged_words,
+        max_urls=args.max_urls,
+    )
     app = web.Application()
     app.add_routes([web.get('/', handler)])
     web.run_app(app)
