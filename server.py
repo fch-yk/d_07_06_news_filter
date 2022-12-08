@@ -149,7 +149,7 @@ def test_process_article():
     assert articles_cards[0]['status'] == ProcessingStatus.TIMEOUT.value
 
 
-async def handle(request, charged_words, max_urls):
+async def handle(request, charged_words, max_urls, morph):
     urls = request.query.getone('urls', None)
     if not urls:
         return web.json_response({'error': 'no urls to analyze'}, status=400)
@@ -161,7 +161,6 @@ async def handle(request, charged_words, max_urls):
             status=400,
         )
 
-    morph = pymorphy2.MorphAnalyzer()
     articles_cards = []
     async with anyio.create_task_group() as task_group:
         for url in urls:
@@ -190,10 +189,12 @@ def main():
             for word in file:
                 charged_words.append(word.strip())
 
+    morph = pymorphy2.MorphAnalyzer()
     handler = functools.partial(
         handle,
         charged_words=charged_words,
         max_urls=args.max_urls,
+        morph=morph,
     )
     app = web.Application()
     app.add_routes([web.get('/', handler)])
