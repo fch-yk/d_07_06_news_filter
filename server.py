@@ -104,7 +104,8 @@ async def process_article(
             'url': url,
             'status': status,
             'rating': rating,
-            'words_number': words_number}
+            'words_number': words_number
+        }
     )
 
 
@@ -156,10 +157,8 @@ async def handle(request, charged_words, max_urls, morph):
 
     urls = urls.split(sep=',')
     if len(urls) > max_urls:
-        return web.json_response(
-            {'error': f'too many urls in request, should be {max_urls} or less'},
-            status=400,
-        )
+        error_text = f'too many urls in request, should be {max_urls} or less'
+        return web.json_response({'error': error_text}, status=400)
 
     articles_cards = []
     async with anyio.create_task_group() as task_group:
